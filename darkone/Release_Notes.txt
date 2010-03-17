@@ -21,6 +21,9 @@
 #                                                                           #
 #############################################################################
 
+### Version 0.10.1 ### 18-03-2010 (DD-MM-YYYY)
+
+- Updating some configuration changes. Minor changes.
 
 ### Version 0.10.0 ### 15-03-2010 (DD-MM-YYYY)
 
