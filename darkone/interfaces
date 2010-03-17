@@ -3,4 +3,4 @@
 
 LAN=eth1
 WAN=eth0
-LOO=lo 
+LO=lo 
