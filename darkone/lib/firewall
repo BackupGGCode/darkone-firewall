@@ -25,7 +25,7 @@
 
 
 # Version of the firewall
-VERSION="0.10.1"
+VERSION="0.10.2"
 
 # Rule fields number
 RULE_FN="6"
@@ -51,6 +51,15 @@ firewall_start ()
 {
 
 	local MAIN_RULES_FILE="${CONF_DIR}/firewall.conf"
+	INTERFACES_FILE="${CONF_DIR}/interfaces"
+
+        if [[ ! -s "$INTERFACES_FILE" ]]; then
+
+                echo
+                echo " Error: The interface configuration file ($INTERFACES_FILE) doesn't exists or is empty! Exiting ..."
+                echo
+                exit 19
+        fi
 
         if [[ ! -s "$MAIN_RULES_FILE" ]]; then
 
@@ -99,6 +108,8 @@ firewall_start ()
 
 	done
 
+	init_rule
+
 	for module in $MODULES; do
 
 		$module
@@ -112,10 +123,11 @@ firewall_start ()
 make_tmp_rule_file ()
 {
         local CONF_FILE="$1"
-	local file_conf="$2"
+	local base_file_name="$2"
+	local module="$3"
 
-        start_line="`grep -n "^\[filter\]" $CONF_FILE | awk -F : '{print $1}'`"
-        nr_lines="`cat "$CONF_FILE" | wc -l`"
+        start_line="`grep -n "^\[$module\]" $CONF_FILE | awk -F : '{print $1}'`"
+        nr_lines="`wc -l < "$CONF_FILE"`"
 
 	((start_line++))
 	for ((i=$start_line;i<$nr_lines;i++)); do
@@ -135,7 +147,7 @@ make_tmp_rule_file ()
 
 	done
 
-	sed -n "${start_line},${end_line}p" $CONF_FILE | grep -v "^#" | grep -v "^$" | grep -v "^[ ]\{1,\}" |  awk '!/\t/' | grep -v "=" > ${TMP_DIR}/filter_${file_conf}
+	sed -n "${start_line},${end_line}p" $CONF_FILE | grep -v "^#" | grep -v "^$" | grep -v "^[ ]\{1,\}" |  awk '!/\t/' | grep -v "=" > ${TMP_DIR}/${module}_${base_file_name}
 
 	if [[ "$?" -ne 0 ]]; then
 
@@ -145,7 +157,7 @@ make_tmp_rule_file ()
 		exit 21
 	fi
 
-	if [[ ! -s "${TMP_DIR}/filter_${file_conf}" ]]; then
+	if [[ ! -s "${TMP_DIR}/${module}_${base_file_name}" ]]; then
 
 		echo
 		echo " Error: Temp rule file doesn't exist or exist and is empty. Exiting ..."
@@ -155,3 +167,27 @@ make_tmp_rule_file ()
 	fi
 
 }
+
+init_rule ()
+{
+                # Permit outbound traffic for  DNS 
+                $IPT -t mangle -A FORWARD -p udp -m udp --sport 53 -j ACCEPT
+                $IPT -t mangle -A INPUT -p udp -m udp --sport 53 -j ACCEPT
+
+                # Permit established and related connections.
+                $IPT -t mangle -A FORWARD -p tcp -m state --state ESTABLISHED,RELATED -j ACCEPT
+                $IPT -t mangle -A INPUT -p tcp -m state --state ESTABLISHED,RELATED -j ACCEPT
+}
+
+log_rule ()
+{
+        $IPT -t mangle -A INPUT -j LOG
+        $IPT -t mangle -A FORWARD -j LOG
+}
+
+set_policy ()
+{
+        $IPT -t mangle -P INPUT DROP
+        $IPT -t mangle -P FORWARD DROP
+}
+

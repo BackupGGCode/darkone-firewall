@@ -21,6 +21,10 @@
 #                                                                           #
 #############################################################################
 
+### Version 0.10.2 ### 23-03-2010 (DD-MM-YYYY)
+
+- Added "nat" module. 
+
 ### Version 0.10.1 ### 18-03-2010 (DD-MM-YYYY)
 
 - Updating some configuration changes. Minor changes.

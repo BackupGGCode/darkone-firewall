@@ -121,7 +121,7 @@ chmod a+x /etc/init.d/darkone
 print_status "$?"
 
 echo -n " Creating symlink to /etc/init.d/darkone on /sbin/firewall ... "
-ln -s /etc/init.d/darkone /sbin/darkone
+ln -fs /etc/init.d/darkone /sbin/darkone
 print_status "$?"
 
 echo "DONE"

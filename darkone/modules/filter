@@ -103,7 +103,7 @@ check_chain ()
         fi
 }
 
-check_rule ()
+check_access ()
 {
 	local THE_RULE="$1"
 	local RULE_NR="`echo "$THE_RULE" | awk -F ';' '{print NF}'`"
@@ -207,7 +207,7 @@ check_rule_fields ()
 	check_ip_dst "$IP_DST"
 	check_interface "$INTERFACE"
 	check_chain "$CHAIN"
-	check_rule "$ACCESS"
+	check_access "$ACCESS"
 	check_target "$TARGET"
 
 	do_some_checks "$IP_SRC" "$IP_DST" "$INTERFACE" "$CHAIN" "$ACCESS" "$TARGET"
@@ -219,6 +219,8 @@ check_config ()
 	
 	CONF_FILE="$1"
 	local base_file_name="`basename $CONF_FILE`"
+	local module="$2"
+
 	if [[ ! -s "$CONF_FILE" ]]; then
 	
 		echo
@@ -229,9 +231,9 @@ check_config ()
 
 	fi
 	
-	make_tmp_rule_file "$CONF_FILE" "$base_file_name"
+	make_tmp_rule_file "$CONF_FILE" "$base_file_name" "$module"
 
-	exec 3<> ${TMP_DIR}/filter_${base_file_name}	
+	exec 3<> ${TMP_DIR}/${module}_${base_file_name}	
 	while read rule_line <&3; do
 		
 		check_rule_fields "$rule_line"
@@ -243,29 +245,6 @@ check_config ()
 	done
 	exec 3>&-
 
-}
-
-init_rule ()
-{
-                # Permit outbound traffic for  DNS 
-                $IPT -t mangle -A FORWARD -p udp -m udp --sport 53 -j ACCEPT
-                $IPT -t mangle -A INPUT -p udp -m udp --sport 53 -j ACCEPT
-
-                # Permit established and related connections.
-                $IPT -t mangle -A FORWARD -p tcp -m state --state ESTABLISHED,RELATED -j ACCEPT
-                $IPT -t mangle -A INPUT -p tcp -m state --state ESTABLISHED,RELATED -j ACCEPT
-}
-
-log_rule ()
-{
-	$IPT -t mangle -A INPUT -j LOG
-        $IPT -t mangle -A FORWARD -j LOG
-}
-
-set_policy ()
-{
-	$IPT -t mangle -P INPUT DROP
-	$IPT -t mangle -P FORWARD DROP
 }
 
 get_parameters ()
@@ -341,7 +320,7 @@ apply_iptables_rule ()
         local TARGET="`echo "$6" | awk -F '|' '{print $1}'`"
 	local ACCESS_NR="$7"
 	local FILTER_NAME="$8"
-	local module="Filter:${FILTER_NAME}"
+	local module="${9}:${FILTER_NAME}"
 
 	for ((i=1;i<=$ACCESS_NR;i++)); do
 
@@ -398,7 +377,7 @@ apply_rules ()
 {
 	local TMP_CONF_FILE="$1"
 	local CONF_FILE="$2"
-	
+	local module="$3"
 
 	exec 3<> $TMP_CONF_FILE
 	while read rule_line <&3; do
@@ -414,8 +393,8 @@ apply_rules ()
                 fi
 
 		FILTER_NAME="`basename $CONF_FILE | awk -F . '{print $1}'`"
-		apply_iptables_rule "$IP_SRC" "$IP_DST" "$INTERFACE" "$CHAIN" "$ACCESS" "$TARGET" "$ACCESS_NR" "$FILTER_NAME"
-		echo "$IP_SRC $IP_DST $INTERFACE $CHAIN $ACCESS $TARGET - $ACCESS_NR"
+		apply_iptables_rule "$IP_SRC" "$IP_DST" "$INTERFACE" "$CHAIN" "$ACCESS" "$TARGET" "$ACCESS_NR" "$FILTER_NAME" "$module"
+		echo "$IP_SRC $IP_DST $INTERFACE $CHAIN $ACCESS $TARGET"
 		
 	done
 	exec 3>&-
@@ -427,26 +406,16 @@ filter ()
 {
 
 	local CONF_FILES="`ls $CONF_DIR |  grep "[.]conf$" `"
-        INTERFACES_FILE="${CONF_DIR}/interfaces"
-
-        if [[ ! -s "$INTERFACES_FILE" ]]; then
-
-                echo
-                echo " Error: The interface configuration file ($INTERFACES_FILE) doesn't exists or is empty! Exiting ..."
-                echo
-                exit 19
-        fi
+	local module="filter"
 
         for file in $CONF_FILES; do
 
-                check_config "${CONF_DIR}/${file}"
+                check_config "${CONF_DIR}/${file}" "$module"
         done
 
-        init_rule
-
         for file in $CONF_FILES; do
 
-                apply_rules "${TMP_DIR}/filter_${file}" "${CONF_DIR}/${file}"
+                apply_rules "${TMP_DIR}/${module}_${file}" "${CONF_DIR}/${file}" "$module"
         done
 
 }
