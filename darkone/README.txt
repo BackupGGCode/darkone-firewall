@@ -39,7 +39,7 @@ Darkone Firewall Readme File
 
 Step 1
 
-	Untar the darkone-firewall.tar.gz file. darkone-firewall directory will be created in the current working directory.
+	Untar the darkone-firewall-xxx.tar.gz file. darkone-firewall directory will be created in the current working directory.
 
 Step 2
 	Go into darkone-firewall directory: cd darkone-firewall

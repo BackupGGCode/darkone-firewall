@@ -23,7 +23,8 @@
 
 ### Version 0.10.2 ### 23-03-2010 (DD-MM-YYYY)
 
-- Added "nat" module. 
+- Added "nat" module. Supports the following targets: SNAT,DNAT and MASQUERADE
+- Remove targets MASQUERADE and SNAT from filter module. 
 
 ### Version 0.10.1 ### 18-03-2010 (DD-MM-YYYY)
 
