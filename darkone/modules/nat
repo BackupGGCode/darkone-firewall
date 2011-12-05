@@ -195,7 +195,7 @@ nat_do_some_checks ()
 	
 	 local IP_SRC="$1"
 	 local IP_DST="$2"
-	 local INTERFACE="$3"
+         local INTERFACE="$3"
 	 local CHAIN="$4"
 	 local ACCESS="$5"
 	 local TARGET="`echo "$6" | awk -F '|' '{print $1}'`"

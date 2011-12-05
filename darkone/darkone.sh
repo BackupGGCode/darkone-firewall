@@ -26,6 +26,15 @@
 #									#
 #########################################################################
 
+### BEGIN INIT INFO
+# Provides:          DarkOne
+# Required-Start:    $network $syslog
+# Required-Stop:     $syslog
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: Start Darkone Firewall at boot time
+# Description:       DarkOne Firewall.
+### END INIT INFO
 
 CONF_FILE="/etc/default/darkone"
 
